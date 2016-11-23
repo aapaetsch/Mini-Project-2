@@ -1,7 +1,7 @@
 import sqlite3
 
 
-
+#attr= ["A"], myFD = [[["A","B"],["C"]],[["A","C"],["D"]]]
 def find_closure(attr,myFD):
 	closure = attr[:]
 	nowFD = myFD[:]
@@ -22,7 +22,6 @@ def find_closure(attr,myFD):
 	return closure
 
 def delete_redundant(FD, compare):
-
 	all_closure = []
 	for i in compare:
 		closure = find_closure(i[1],FD)
@@ -42,7 +41,7 @@ def delete_redundant(FD, compare):
 
 
 
-def find_3NF(myFD):
+def find_3NF(myFD,R):
 	#First, make RHS of each FD into a single attribute:
 	FD1 = []
 	for i in myFD:
@@ -77,7 +76,56 @@ def find_3NF(myFD):
 		delete_redundant(FD3,compare)
 	print("FD3:")
 	print(FD3)
+	find_BCNF(FD3[:],R)
+	FD4 = []
+	temp_Rs = []
+	for i in FD3:
+		if i[0] in temp_Rs:
+			for k in i[1]:
+				FD4[temp_Rs.index(i[0])][1].append(k)
+		else:
+			FD4.append(i)
+			temp_Rs.append(i[0])
+	print("FD4:")
+	print(FD4)
+	find_BCNF(FD4,R)
 
+
+def find_BCNF(myFD,R):
+	current_R = R[:]
+	next_R = []
+	R_F = []
+	violate = True
+	#print("test BCNF:")
+	while violate:
+		if(len(myFD)==0):
+			break
+		for i in myFD:
+			violate = False
+			if find_closure(i[0],myFD)!=current_R:
+				violate = True
+				next_R = current_R[:]
+				for k in i[1]:
+					#print(i,k,next_R)
+					next_R.remove(k)
+				for k in myFD:
+					
+					if (k!=i)and((not set(k[0]).issubset(next_R)) or (not set(k[1]).issubset(next_R))):
+						
+						violate = False
+				if violate:
+					
+					Rn = []
+					for k in i[1]:
+						Rn.append(k)
+					for k in i[0]:
+						Rn.append(k)
+					R_F.append([Rn,i])
+					current_R = next_R[:]
+					myFD.remove(i)
+					break
+	R_F.append([current_R,myFD])
+	print(R_F)
 
 
 def main():
@@ -88,7 +136,7 @@ def main():
 	c.execute('''SELECT * FROM Input_FDS_R1;''')
 	conn.commit()
 	FD = c.fetchall()
-	print(FD)
+	#print(FD)
 	myFD = []
 	for i in range(len(FD)):
 		myFD.append([])
@@ -99,12 +147,21 @@ def main():
 #	print(find_closure([u'B'],myFD))
 #print(find_closure([u'C'],myFD))
 
-	find_3NF(myFD)
 
-	c.execute('''SELECT * FROM Input_R1;''')
+
+	c.execute('''pragma table_info(Input_R1);''')
 	conn.commit()
-	R = c.fetchall()
-#print(R)
+	R_c = c.fetchall()
+	R= []
+	for i in R_c:
+		R.append(i[1])
+	print(R)
+	find_3NF(myFD[:],R[:])
+	print("BCNF:")
+	print(myFD)
+	print(R)
+	find_BCNF(myFD[:],R[:])
+
 
 
 
