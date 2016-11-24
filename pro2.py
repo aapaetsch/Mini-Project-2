@@ -39,9 +39,7 @@ def delete_redundant(FD, compare):
 		if redundant:
 			FD.remove(i)
 
-
-
-def find_3NF(myFD,R):
+def find_min_cover(myFD):
 	#First, make RHS of each FD into a single attribute:
 	FD1 = []
 	for i in myFD:
@@ -76,6 +74,11 @@ def find_3NF(myFD,R):
 			need_c = False
 	if (need_c):
 		delete_redundant(FD3,compare)
+	return FD3
+
+def find_3NF(myFD,R):
+
+	FD3 = find_min_cover(myFD[:])
 	print "\n FD3:"
 	for i in FD3:
 		clean_print(i)
@@ -171,6 +174,10 @@ def clean_print(fd):
 	lhs = clean(fd[0])
 	rhs = clean(fd[1])
 	print lhs+"|"+rhs
+
+
+def f_equal(FD1,FD2):
+	return set(find_min_cover(FD1))==set(find_min_cover(FD2))
 
 def main():
 	# connecting to a database, creating the cursor
