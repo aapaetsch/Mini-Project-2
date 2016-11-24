@@ -134,8 +134,23 @@ def find_BCNF(myFD,R):
 					break
 	R_F.append([current_R,myFD])
 	print(R_F)
-def table_create(c, conn, attributes):
-	pass
+def table_create(c, conn, attributes, columns, is_fd):
+	if is_fd == False:
+		name = 'Output_R1_'
+	else:
+		name = 'Output_FDs_R1'
+
+	for i in columns:
+		name += i[0]
+	c.executescript("DROP TABLE IF EXISTS "+ name +''';
+
+	CREATE TABLE '''+name+"(\n	"+ columns[0][0]+ columns[0][1]+");"
+
+	for i in range(len(columns)):
+		#c.execute("ALTER TABLE :name ADD COLUMN :colname", {'name':namevar,'colname':columnvar})
+		c.execute("ALTER TABLE :name ADD COLUMN :col :typ;",{'name':name,'col':columns[i][0], 'typ':columns[i][1]})
+
+
 
 def clean(item):
 	isnot = ["[","]","'"," "]
