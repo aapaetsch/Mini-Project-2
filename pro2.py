@@ -26,7 +26,7 @@ def delete_redundant(FD, compare):
 	for i in compare:
 		closure = find_closure(i[1],FD)
 		all_closure.append(closure[:])
-	
+
 	for i in compare:
 		closure = find_closure(i[1],FD)
 		all_closure2 = all_closure[:]
@@ -47,7 +47,8 @@ def find_3NF(myFD,R):
 	for i in myFD:
 		for k in i[1]:
 			FD1.append([i[0],[k]])
-	print(FD1)
+	for i in FD1:
+		clean_print(i)
 	#Second, eliminate redundant attributes from LHS.
 	for i in FD1:
 		if len(i[0])>1:
@@ -56,9 +57,10 @@ def find_3NF(myFD,R):
 				Attr1.remove(k)
 				if set(i[1]).issubset(find_closure(Attr1,FD1)):
 					i[0].remove(k)
-	print("FD2:")
+	print "\n FD2:"
 	FD1.sort()
-	print(FD1)
+	for i in FD1:
+		clean_print(i)
 	#Third, we delete redundant FDs.
 	compare = [FD1[0][:]]
 	need_c = False
@@ -74,8 +76,12 @@ def find_3NF(myFD,R):
 			need_c = False
 	if (need_c):
 		delete_redundant(FD3,compare)
-	print("FD3:")
-	print(FD3)
+	print "\n FD3:"
+	for i in FD3:
+		clean_print(i)
+	print "\n"
+	print FD3
+	print "\n"
 	find_BCNF(FD3[:],R)
 	FD4 = []
 	temp_Rs = []
@@ -86,8 +92,10 @@ def find_3NF(myFD,R):
 		else:
 			FD4.append(i)
 			temp_Rs.append(i[0])
-	print("FD4:")
-	print(FD4)
+	print "\n FD4:"
+	for i in FD4:
+		clean_print(i)
+
 	find_BCNF(FD4,R)
 
 
@@ -109,12 +117,12 @@ def find_BCNF(myFD,R):
 					#print(i,k,next_R)
 					next_R.remove(k)
 				for k in myFD:
-					
+
 					if (k!=i)and((not set(k[0]).issubset(next_R)) or (not set(k[1]).issubset(next_R))):
-						
+
 						violate = False
 				if violate:
-					
+
 					Rn = []
 					for k in i[1]:
 						Rn.append(k)
@@ -126,7 +134,25 @@ def find_BCNF(myFD,R):
 					break
 	R_F.append([current_R,myFD])
 	print(R_F)
+def table_create(c, conn, attributes):
+	pass
 
+def clean(item):
+	isnot = ["[","]","'"," "]
+	fixed = ''
+	length = len(item)
+	for i in range(length):
+		if i != 0:
+			if i != range(length):
+				fixed+=","
+		if item[i] not in isnot:
+			fixed += item[i]
+	return fixed
+
+def clean_print(fd):
+	lhs = clean(fd[0])
+	rhs = clean(fd[1])
+	print lhs+"|"+rhs
 
 def main():
 	# connecting to a database, creating the cursor
@@ -141,7 +167,7 @@ def main():
 	for i in range(len(FD)):
 		myFD.append([])
 		for j in range(len(FD[i])):
-			myFD[i].append(FD[i][j].split(','))
+			myFD[i].append(str(FD[i][j]).split(','))
 	print(myFD)
 	#	print(find_closure([u'A'],myFD))
 #	print(find_closure([u'B'],myFD))
@@ -153,14 +179,24 @@ def main():
 	conn.commit()
 	R_c = c.fetchall()
 	R= []
+	col = []
 	for i in R_c:
-		R.append(i[1])
+		item = []
+		R.append(str(i[1]))
+		item.append(str(i[1]))
+		item.append(str(i[2]))
+		col.append(item)
 	print(R)
 	find_3NF(myFD[:],R[:])
-	print("BCNF:")
-	print(myFD)
+	print("\n BCNF:")
+	for i in myFD:
+		clean_print(i)
+
 	print(R)
 	find_BCNF(myFD[:],R[:])
+	print "\n HERE ARE THE COLUMNS"
+	for i in col:
+		clean_print(i)
 
 
 
