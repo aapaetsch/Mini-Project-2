@@ -96,7 +96,7 @@ def find_3NF(myFD,R):
 	for i in FD4:
 		clean_print(i)
 
-	find_BCNF(FD4,R)
+	return find_BCNF(FD4,R)
 
 
 def find_BCNF(myFD,R):
@@ -134,6 +134,9 @@ def find_BCNF(myFD,R):
 					break
 	R_F.append([current_R,myFD])
 	print(R_F)
+	return R_F
+
+
 def table_create(c, conn, attributes, columns, is_fd):
 	if is_fd == False:
 		name = 'Output_R1_'
@@ -144,7 +147,7 @@ def table_create(c, conn, attributes, columns, is_fd):
 		name += i[0]
 	c.executescript("DROP TABLE IF EXISTS "+ name +''';
 
-	CREATE TABLE '''+name+"(\n	"+ columns[0][0]+ columns[0][1]+");"
+	CREATE TABLE '''+name+"(\n	"+ columns[0][0]+ columns[0][1]+");")
 
 	for i in range(len(columns)):
 		#c.execute("ALTER TABLE :name ADD COLUMN :colname", {'name':namevar,'colname':columnvar})
