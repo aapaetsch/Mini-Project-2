@@ -1,5 +1,6 @@
 import sqlite3
 import copy
+import sys
 
 def find_closure(attr, myFD):
     closure = copy.deepcopy(attr)
@@ -16,7 +17,10 @@ def find_closure(attr, myFD):
                 break
         if n1end:
             break
-    closure.sort()
+    try:
+        closure.sort()
+    except:
+        pass
     return closure
 
 def delete_redundant(FD, compare):
@@ -304,16 +308,18 @@ def clean(item):
 	return fixed
 
 def clean_print(fd):
-	lhs = clean(fd[0])
-	rhs = clean(fd[1])
-	print lhs,"|",rhs
+    lhs = clean(fd[0])
+    rhs = clean(fd[1])
+    if rhs != '':
+        print lhs,"|",rhs
 
 def f_equal(FD1, FD2):
     return set(find_min_cover(FD1)) == set(find_min_cover(FD2))
 
 def is_cover(FD1, FD2):
-    for i in FD1:
-        if not set(i[1]).issubset(find_closure(i[0], FD2)):
+    print FD1, FD2
+    for i in range(len(FD1)):
+        if not set(FD1[1]).issubset(find_closure(FD1[0], FD2)):
             return False
     return True
 
@@ -331,9 +337,26 @@ def R_F_to_FD(R_F):
         else:
             FD.append(i[1])
     return FD
+def user():
+    while True:
+        print '''0 - exit system
+1 - compute attribute closure
+2 - check if two FD's are equivilant
+3 - synthesize 3nf schema
+4 - decompose into BCNF'''
+        entry = raw_input("Enter choice :")
+        if entry == '0':
+            sys.exit()
+        if entry == '1' or entry == '2' or entry == '3' or entry == '4':
+            return entry
+
 
 def main():
-    conn = sqlite3.connect('MiniProject2-InputExample.db')
+    entry = raw_input("Enter the database name: ")
+    if entry != '':
+        conn = sqlite3.connect(entry)
+    else:
+        conn = sqlite3.connect('MiniProject2-InputExample.db')
     c = conn.cursor()
     c.execute("SELECT * FROM Input_FDS_R1;")
     conn.commit()
@@ -357,17 +380,86 @@ def main():
         col.append(item)
 
     NF3 = R_F_to_FD(find_3NF(copy.deepcopy(myFD), R[:]))
-
+    R_F = find_BCNF(copy.deepcopy(myFD), R[:])
+    R_F = R_F_to_FD(R_F)
     for i in NF3:
         if len(i) == 0:
             NF3.remove(i)
 
-    table_create(c, conn, col, NF3)
 
-    R_F = find_BCNF(copy.deepcopy(myFD), R[:])
 
-    R_F = R_F_to_FD(R_F)
 
-    table_create(c, conn, col, R_F)
-    conn.commit()
+    while True:
+        enter = user()
+        print ""
+
+        if enter == '3':
+            print "3NF schema"
+            for i in NF3:
+                clean_print(i)
+            while True:
+                ent = raw_input("Would you like to decompose this schema?(y/n) ")
+                if ent == 'y':
+                    table_create(c, conn, col, NF3)
+                    conn.commit()
+                    break
+                elif ent == 'n':
+                    break
+                else:
+                    print "invalid entry"
+        elif enter == '4':
+            print "BCNF decomposition"
+            for i in R_F:
+                clean_print(i)
+            while True:
+                ent = raw_input("would you like to decompose this schema?(y/n) ")
+                if ent == 'y':
+                    table_create(c, conn, col, R_F)
+                    conn.commit()
+                    break
+                elif ent == 'n':
+                    break
+                else:
+                    print "invalid input"
+        elif enter == '1':
+            attrib = raw_input("Enter a list of attributes seperated by comma: ")
+            if len(attrib) == 0:
+                print "No attributes entered, returning to user interface"
+
+            else:
+
+                attrib = attrib.split(",")
+                for i in range(len(attrib)):
+                    attrib[i] = attrib[i].upper()
+
+                print "closure in list format is ",find_closure(attrib, myFD)
+
+        elif enter == '2':
+            fd1 = raw_input("Enter FD1, attributes are seperated by comma: ")
+            fd2 = raw_input("Enter FD2, attributes are seperated by comma: ")
+            if len(fd1) == 0 or len(fd2) == 0:
+                print "No FD's entered, returning to user interface"
+            else:
+                fd1 = fd1.split(",")
+                fd2 = fd2.split(",")
+                for i in range(len(fd1)):
+                    fd1[i] = fd1[i].upper()
+                for i in range(len(fd2)):
+                    fd2[i] = fd2[i].upper()
+                for i in myFD:
+                    if i[0] == fd1:
+                        fd1 = i
+                    if i[0] == fd2:
+                        fd2 = i
+
+                eq = is_equal(fd1, fd2)
+                if eq == True:
+                    print "FDs are equal"
+                else:
+                    print "FDs are not equal"
+
+
+        print ""
+
+
 main()
