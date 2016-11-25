@@ -99,9 +99,9 @@ def find_3NF(myFD,R):
 	for i in FD4:
 		clean_print(i)
 
-	return find_BCNF(FD4,R)
-"""
-def find_BCNF(myFD,R):
+	return find_dp(FD4,R)
+
+def find_dp(myFD,R):
 	current_R = R[:]
 	next_R = []
 	R_F = []
@@ -137,7 +137,7 @@ def find_BCNF(myFD,R):
 	R_F.append([current_R,myFD])
 	
 	return R_F
-"""
+
 def find_BCNF(myFD,R):
 	current_R = R[:]
 	next_R = []
@@ -222,6 +222,17 @@ def clean_print(fd):
 def f_equal(FD1,FD2):
 	return set(find_min_cover(FD1))==set(find_min_cover(FD2))
 
+
+
+def is_cover(FD1, FD2):
+	for i in FD1:
+		if not set(i[1]).issubset(find_closure(i[0],FD2)):
+			return False
+	return True
+
+def is_equal(FD1, FD2):
+	return is_cover(copy.deepcopy(FD1), copy.deepcopy(FD2)) and is_cover(copy.deepcopy(FD2), copy.deepcopy(FD1))
+
 def main():
 	# connecting to a database, creating the cursor
 	conn = sqlite3.connect('MiniProject2-InputExample.db')
@@ -267,6 +278,9 @@ def main():
 	R_F = find_BCNF(copy.deepcopy(myFD),R[:])
 	print "\n BCNF function u need"
 	print(R_F)
+
+	print("test for FD equals")
+	print(is_equal([[['A','B'],['C','D']]],[[['A','B'],['C']],[['A','B'],['D']]]))
 
 
 
