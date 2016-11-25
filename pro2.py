@@ -1,10 +1,10 @@
 import sqlite3
-
+import copy
 
 #attr= ["A"], myFD = [[["A","B"],["C"]],[["A","C"],["D"]]]
 def find_closure(attr,myFD):
-	closure = attr[:]
-	nowFD = myFD[:]
+	closure = copy.deepcopy(attr)
+	nowFD = copy.deepcopy(myFD)
 	for n1 in myFD:
 		n1end = True
 		for i in nowFD:
@@ -85,7 +85,7 @@ def find_3NF(myFD,R):
 	print "\n"
 	print FD3
 	print "\n"
-	find_BCNF(FD3[:],R)
+#find_BCNF(FD3[:],R)
 	FD4 = []
 	temp_Rs = []
 	for i in FD3:
@@ -100,8 +100,7 @@ def find_3NF(myFD,R):
 		clean_print(i)
 
 	return find_BCNF(FD4,R)
-
-
+"""
 def find_BCNF(myFD,R):
 	current_R = R[:]
 	next_R = []
@@ -120,12 +119,12 @@ def find_BCNF(myFD,R):
 					#print(i,k,next_R)
 					next_R.remove(k)
 				for k in myFD:
-
+					
 					if (k!=i)and((not set(k[0]).issubset(next_R)) or (not set(k[1]).issubset(next_R))):
-
+						
 						violate = False
 				if violate:
-
+					
 					Rn = []
 					for k in i[1]:
 						Rn.append(k)
@@ -136,7 +135,51 @@ def find_BCNF(myFD,R):
 					myFD.remove(i)
 					break
 	R_F.append([current_R,myFD])
-	print(R_F)
+	
+	return R_F
+"""
+def find_BCNF(myFD,R):
+	current_R = R[:]
+	next_R = []
+	R_F = []
+	violate = True
+	removed = []
+	#print("test BCNF:")
+	while violate:
+		if(len(myFD)==0):
+			break
+		for i in myFD:
+			removed[:]=[]
+			violate = False
+			if find_closure(i[0],myFD)!=current_R:
+				violate = True
+				next_R = current_R[:]
+				for k in i[1]:
+					#print(i,k,next_R,R_F)
+					removed.append(k)
+					next_R.remove(k)
+		
+			if violate:
+				
+				Rn = []
+				for k in i[1]:
+					Rn.append(k)
+				for k in i[0]:
+					Rn.append(k)
+				R_F.append([Rn,i])
+				current_R = next_R[:]
+				myFD.remove(i)
+				for k in myFD:
+					for j in removed:
+						#print("j","k",j,k)
+						if j in k[0]:
+							myFD.remove(k)
+							break
+						elif j in k[1]:
+							k[1].remove(j)
+				break
+	R_F.append([current_R,myFD])
+
 	return R_F
 
 
@@ -211,18 +254,19 @@ def main():
 		item.append(str(i[1]))
 		item.append(str(i[2]))
 		col.append(item)
-	print(R)
-	find_3NF(myFD[:],R[:])
-	print("\n BCNF:")
+	print("\n origin")
+	for i in myFD:
+		clean_print(i)
+	print("\n")
+	print(find_3NF(copy.deepcopy(myFD),R[:]))
+	print("\n BCNF1:")
 	for i in myFD:
 		clean_print(i)
 
 	print(R)
-	find_BCNF(myFD[:],R[:])
-	print "\n HERE ARE THE COLUMNS"
-	for i in col:
-		clean_print(i)
-
+	R_F = find_BCNF(copy.deepcopy(myFD),R[:])
+	print "\n BCNF function u need"
+	print(R_F)
 
 
 
