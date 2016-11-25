@@ -1,9 +1,10 @@
+
 import sqlite3
-import copy
+
 #attr= ["A"], myFD = [[["A","B"],["C"]],[["A","C"],["D"]]]
 def find_closure(attr,myFD):
-	closure = copy.deepcopy(attr)
-	nowFD = copy.deepcopy(myFD)
+	closure = attr[:]
+	nowFD = myFD[:]
 	for n1 in myFD:
 		n1end = True
 		for i in nowFD:
@@ -85,6 +86,7 @@ def find_3NF(c, conn, myFD,R, col):
 	print FD3
 	print "\n"
 	table_create(c, conn, col, FD3)
+	find_BCNF(c, conn, FD3[:],R, col)
 	FD4 = []
 	temp_Rs = []
 	for i in FD3:
@@ -106,40 +108,37 @@ def find_BCNF(c, conn, myFD,R, col):
 	next_R = []
 	R_F = []
 	violate = True
-	removed = []
 	#print("test BCNF:")
 	while violate:
 		if(len(myFD)==0):
 			break
 		for i in myFD:
-			removed[:]=[]
 			violate = False
 			if find_closure(i[0],myFD)!=current_R:
 				violate = True
 				next_R = current_R[:]
 				for k in i[1]:
 					#print(i,k,next_R)
-					removed.append(k)
 					next_R.remove(k)
-			if violate:
-				Rn = []
-				for k in i[1]:
-					Rn.append(k)
-				for k in i[0]:
-					Rn.append(k)
-				R_F.append([Rn, i])
-				current_R = next_R[:]
-				myFD.remove(i)
 				for k in myFD:
-					for j in removed:
-						if j in k[0]:
-							myFD.remove(k)
-							break
-						elif j in k[1]:
-							k[1].remove(j)
-							break
-			R_F.append([current_R, myFD])
-			return R_F
+
+					if (k!=i)and((not set(k[0]).issubset(next_R)) or (not set(k[1]).issubset(next_R))):
+
+						violate = False
+				if violate:
+
+					Rn = []
+					for k in i[1]:
+						Rn.append(k)
+					for k in i[0]:
+						Rn.append(k)
+					R_F.append([Rn,i])
+					current_R = next_R[:]
+					myFD.remove(i)
+					break
+	R_F.append([current_R,myFD])
+	print(R_F)
+	return R_F
 
 def table_create(c, conn, attributes, columns):
 	#for the names of the outputs
@@ -232,9 +231,7 @@ def table_create(c, conn, attributes, columns):
 		print 'primary key', primary_key
 		print covered ,'covered'
 		print data_combined, 'combined'
-		for j in rangepkey += '?'
-			if j != (len(primary_key)-1):
-				pkey += ','(len(data_combined)):
+		for j in range(len(data_combined)):
 			varies = ''
 			for index in range(len(data_combined[j])):
 				varies += '?'
