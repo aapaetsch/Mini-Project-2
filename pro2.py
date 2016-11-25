@@ -176,11 +176,12 @@ def table_create(c, conn, attributes, columns):
 		c.executescript("DROP TABLE IF EXISTS "+name_fd+''';
 		DROP TABLE IF EXISTS '''+name+''';
 		CREATE TABLE ''' + name_fd + " (LHS TEXT, RHS TEXT);")
-
+		primary_key = []
 		for k in columns:
 			if depend[i] == k[0]:
 				for item in k[0]:
 					if item not in covered:
+						primary_key.append(item)
 						covered.append(item)
 				for item in k[1]:
 					if item not in covered:
@@ -212,7 +213,12 @@ def table_create(c, conn, attributes, columns):
 			if k != (len(covered)-1):
 				data_columns +=','
 		print data_columns
-		c.execute("CREATE TABLE "+name+" ("+data_columns+" UNIQUE);")
+		pkey = ''
+		for j in range(len(primary_key)):
+			pkey += primary_key[j]
+			if j != (len(primary_key)-1):
+				pkey += ','
+		c.execute("CREATE TABLE "+name+" ("+data_columns+" UNIQUE, PRIMARY KEY("+pkey+"));")
 		data_combined = []
 		count = 0
 		for j in range(len(data[0])):
@@ -221,11 +227,10 @@ def table_create(c, conn, attributes, columns):
 				poly_list.append(d[count])
 			count+=1
 			data_combined.append(poly_list)
-
+		print 'primary key', primary_key
 		print covered ,'covered'
 		print data_combined, 'combined'
 		for j in range(len(data_combined)):
-			print str_repr , 'str_repr'
 			varies = ''
 			for index in range(len(data_combined[j])):
 				varies += '?'
