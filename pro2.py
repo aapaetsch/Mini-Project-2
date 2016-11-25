@@ -1,6 +1,5 @@
 import sqlite3
 
-
 #attr= ["A"], myFD = [[["A","B"],["C"]],[["A","C"],["D"]]]
 def find_closure(attr,myFD):
 	closure = attr[:]
@@ -76,7 +75,7 @@ def find_min_cover(myFD):
 		delete_redundant(FD3,compare)
 	return FD3
 
-def find_3NF(myFD,R):
+def find_3NF(c, conn, myFD,R, col):
 
 	FD3 = find_min_cover(myFD[:])
 	print "\n FD3:"
@@ -85,7 +84,8 @@ def find_3NF(myFD,R):
 	print "\n"
 	print FD3
 	print "\n"
-	find_BCNF(FD3[:],R)
+	table_create(c, conn, col, FD3)
+	find_BCNF(c, conn, FD3[:],R, col)
 	FD4 = []
 	temp_Rs = []
 	for i in FD3:
@@ -99,10 +99,10 @@ def find_3NF(myFD,R):
 	for i in FD4:
 		clean_print(i)
 
-	return find_BCNF(FD4,R)
+	return find_BCNF(c, conn, FD4,R, col)
 
 
-def find_BCNF(myFD,R):
+def find_BCNF(c, conn, myFD,R, col):
 	current_R = R[:]
 	next_R = []
 	R_F = []
@@ -139,22 +139,101 @@ def find_BCNF(myFD,R):
 	print(R_F)
 	return R_F
 
-
-def table_create(c, conn, attributes, columns, is_fd):
-	if is_fd == False:
-		name = 'Output_R1_'
-	else:
-		name = 'Output_FDs_R1'
-
+def table_create(c, conn, attributes, columns):
+	#for the names of the outputs
+	fds=[]
+	#for the fd variables
+	depend = []
+	#for each item in the passed in schema
 	for i in columns:
-		name += i[0]
-	c.executescript("DROP TABLE IF EXISTS "+ name +''';
+		#if the lhs not in depend
+		if i[0] not in depend:
+			depend.append(i[0])
+		#flag for checking redundancy
+		in_fds = False
+		title = ''
+		for item in i[0]:
+			title += item
+		for item in i[1]:
+			title += item
+		#loop adds dependants with same i[0] to fds
+		for j in columns:
+			if i[0] == j[0] and i[1] != j[1]:
+				for item in j[1]:
+					title += item
+		for j in fds:
+			if sorted(j) == sorted(title):
+				in_fds = True
+				break
+		if in_fds == False:
+			fds.append(title)
+	print fds
 
-	CREATE TABLE '''+name+"(\n	"+ columns[0][0]+ columns[0][1]+");")
+	for i in range(len(fds)):
+		covered = []
+		name_fd = 'Output_FDs_R1_'+fds[i]
+		name = 'Output_R1_'+fds[i]
+		c.executescript("DROP TABLE IF EXISTS "+name_fd+''';
+		DROP TABLE IF EXISTS '''+name+''';
+		CREATE TABLE ''' + name_fd + " (LHS TEXT, RHS TEXT);")
 
-	for i in range(len(columns)):
-		#c.execute("ALTER TABLE :name ADD COLUMN :colname", {'name':namevar,'colname':columnvar})
-		c.execute("ALTER TABLE :name ADD COLUMN :col :typ;",{'name':name,'col':columns[i][0], 'typ':columns[i][1]})
+		for k in columns:
+			if depend[i] == k[0]:
+				for item in k[0]:
+					if item not in covered:
+						covered.append(item)
+				for item in k[1]:
+					if item not in covered:
+						covered.append(item)
+				lhs = clean(k[0])
+				rhs = clean(k[1])
+				c.execute("INSERT INTO "+name_fd+" VALUES (:left, :right);", {'left':lhs, 'right':rhs})
+				conn.commit()
+
+		data = []
+		for x in range(len(covered)):
+			c.execute("SELECT {cl} FROM Input_R1;".format(cl=covered[x]))
+			obj = c.fetchall()
+			for item in attributes:
+				if covered[x] == item[0]:
+					for j in range(len(obj)):
+						if type(obj[j][0]) != unicode:
+							obj[j] = type(obj[j][0])(obj[j][0])
+						else:
+							obj[j] = str(obj[j][0])
+			data.append(obj)
+		data_columns = ''
+		for k in range(len(covered)):
+			data_columns += (covered[k]+' ')
+			for j in attributes:
+				if j[0] ==covered[k]:
+					data_columns += j[1]
+			if k != (len(covered)-1):
+				data_columns +=','
+		c.execute("CREATE TABLE "+name+" ("+data_columns+" UNIQUE);")
+		data_combined = []
+		count = 0
+		for j in range(len(data[0])):
+			poly_list = []
+			for d in data:
+				poly_list.append(d[count])
+			count+=1
+			data_combined.append(poly_list)
+
+		print covered ,'covered'
+		print data_combined, 'combined'
+		for j in range(len(data_combined)):
+			str_repr = ''
+			for k in range(len(data_combined[j])):
+				str_repr += str(data_combined[j][k])
+				if k != (len(data_combined[j])-1):
+					str_repr += ','
+			print str_repr , 'str_repr'
+			try:
+				c.execute("INSERT INTO "+name+" VALUES ("+str_repr+");")
+			except:
+				continue
+		conn.commit()
 
 
 
@@ -212,13 +291,13 @@ def main():
 		item.append(str(i[2]))
 		col.append(item)
 	print(R)
-	find_3NF(myFD[:],R[:])
+	find_3NF(c, conn, myFD[:],R[:], col)
 	print("\n BCNF:")
 	for i in myFD:
 		clean_print(i)
 
 	print(R)
-	find_BCNF(myFD[:],R[:])
+	find_BCNF(c, conn, myFD[:],R[:], col)
 	print "\n HERE ARE THE COLUMNS"
 	for i in col:
 		clean_print(i)
