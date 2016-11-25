@@ -201,6 +201,7 @@ def table_create(c, conn, attributes, columns):
 							obj[j] = type(obj[j][0])(obj[j][0])
 						else:
 							obj[j] = str(obj[j][0])
+
 			data.append(obj)
 		data_columns = ''
 		for k in range(len(covered)):
@@ -210,6 +211,7 @@ def table_create(c, conn, attributes, columns):
 					data_columns += j[1]
 			if k != (len(covered)-1):
 				data_columns +=','
+		print data_columns
 		c.execute("CREATE TABLE "+name+" ("+data_columns+" UNIQUE);")
 		data_combined = []
 		count = 0
@@ -223,15 +225,17 @@ def table_create(c, conn, attributes, columns):
 		print covered ,'covered'
 		print data_combined, 'combined'
 		for j in range(len(data_combined)):
-			str_repr = ''
-			for k in range(len(data_combined[j])):
-				str_repr += str(data_combined[j][k])
-				if k != (len(data_combined[j])-1):
-					str_repr += ','
 			print str_repr , 'str_repr'
+			varies = ''
+			for index in range(len(data_combined[j])):
+				varies += '?'
+				if index != (len(data_combined[j])-1):
+					varies += ','
 			try:
-				c.execute("INSERT INTO "+name+" VALUES ("+str_repr+");")
+				c.execute("INSERT INTO "+name+" VALUES ("+varies+");", data_combined[j])
+
 			except:
+				print 'error',data_combined[j]
 				continue
 		conn.commit()
 
